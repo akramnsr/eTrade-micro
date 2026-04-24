@@ -1,0 +1,2 @@
+ALTER TABLE decision
+    ADD COLUMN IF NOT EXISTS decision_id BIGINT;
