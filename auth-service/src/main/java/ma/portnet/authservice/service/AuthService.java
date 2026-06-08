@@ -28,10 +28,10 @@ import java.util.Map;
 @Slf4j
 public class AuthService {
 
-    private final KeycloakProperties      keycloakProperties;
-    private final ObjectMapper            objectMapper;
-    private final RestTemplate            restTemplate;
-    private final UtilisateurRepository   utilisateurRepository;
+    private final KeycloakProperties    keycloakProperties;
+    private final ObjectMapper          objectMapper;
+    private final RestTemplate          restTemplate;
+    private final UtilisateurRepository utilisateurRepository;
 
     public AuthService(KeycloakProperties    keycloakProperties,
                        ObjectMapper          objectMapper,
@@ -42,7 +42,10 @@ public class AuthService {
         this.utilisateurRepository = utilisateurRepository;
     }
 
-    // ── LOGIN ─────────────────────────────────────────────────
+    // ── LOGIN ─────────────────────────────────────────────────────────────────
+    // Le frontend envoie username/password en JSON.
+    // L'Auth Service contacte Keycloak en ROPC et retourne le JWT au frontend.
+    // Le frontend ne connaît jamais l'URL Keycloak.
 
     public LoginResponse login(LoginRequest request) {
         try {
@@ -63,10 +66,10 @@ public class AuthService {
                     String.class
             );
 
-            JsonNode json        = objectMapper.readTree(response.getBody());
-            String accessToken   = json.get("access_token").asText();
-            String refreshToken  = json.get("refresh_token").asText();
-            long   expiresIn     = json.get("expires_in").asLong();
+            JsonNode json       = objectMapper.readTree(response.getBody());
+            String accessToken  = json.get("access_token").asText();
+            String refreshToken = json.get("refresh_token").asText();
+            long   expiresIn    = json.get("expires_in").asLong();
 
             Map<String, Object> claims   = decodeJwtPayload(accessToken);
             String              username = (String) claims.getOrDefault("preferred_username", "");
@@ -75,7 +78,6 @@ public class AuthService {
             String              subject  = (String) claims.get("sub");
             List<String>        roles    = extractRoles(claims);
 
-            // Mettre à jour la date de dernière connexion
             updateLastLogin(username, subject);
 
             log.info("Login réussi : {}", username);
@@ -95,7 +97,9 @@ public class AuthService {
         }
     }
 
-    // ── REFRESH ───────────────────────────────────────────────
+    // ── REFRESH ───────────────────────────────────────────────────────────────
+    // Le frontend envoie son refreshToken au backend.
+    // L'Auth Service contacte Keycloak et retourne de nouveaux tokens.
 
     public LoginResponse refresh(RefreshTokenRequest request) {
         try {
@@ -121,6 +125,8 @@ public class AuthService {
 
             Map<String, Object> claims = decodeJwtPayload(accessToken);
 
+            log.info("Refresh token réussi pour : {}", claims.getOrDefault("preferred_username", "?"));
+
             return new LoginResponse(
                     accessToken, refreshToken, "Bearer", expiresIn,
                     (String) claims.getOrDefault("preferred_username", ""),
@@ -132,11 +138,43 @@ public class AuthService {
         } catch (HttpClientErrorException e) {
             throw new AuthenticationException("Session expirée, veuillez vous reconnecter");
         } catch (Exception e) {
+            log.error("Erreur refresh : {}", e.getMessage());
             throw new AuthenticationException("Impossible de renouveler la session");
         }
     }
 
-    // ── HELPERS PRIVÉS ────────────────────────────────────────
+    // ── LOGOUT ────────────────────────────────────────────────────────────────
+    // Révoque le token côté Keycloak si un refreshToken est fourni.
+    // Sinon, le logout est purement local (le frontend vide son store).
+    // Cette méthode ne lève pas d'exception — le logout local doit toujours réussir.
+
+    public void logout(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            log.info("Logout sans refresh token — logout local uniquement");
+            return;
+        }
+        try {
+            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+            form.add("client_id",     keycloakProperties.getClientId());
+            form.add("client_secret", keycloakProperties.getClientSecret());
+            form.add("refresh_token", refreshToken);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            restTemplate.postForEntity(
+                    keycloakProperties.getLogoutUrl(),
+                    new HttpEntity<>(form, headers),
+                    String.class
+            );
+            log.info("Logout Keycloak réussi");
+        } catch (Exception e) {
+            // On loggue mais on ne bloque pas — le frontend vide son store de toute façon
+            log.warn("Logout Keycloak échoué (non bloquant) : {}", e.getMessage());
+        }
+    }
+
+    // ── HELPERS PRIVÉS ────────────────────────────────────────────────────────
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> decodeJwtPayload(String token) {

@@ -1,6 +1,7 @@
 package ma.portnet.demandservice.service;
 
 import lombok.extern.slf4j.Slf4j;
+import ma.portnet.demandservice.client.DocumentFeignClient;
 import ma.portnet.demandservice.dto.request.CreateDemandRequest;
 import ma.portnet.demandservice.dto.request.UpdateDemandRequest;
 import ma.portnet.demandservice.dto.response.DemandResponse;
@@ -32,7 +33,7 @@ public class DemandService {
     private final HistoriqueStatutsRepository historiqueRepository;
     private final StateMachineService         stateMachineService;
     private final FinancialCalculationService calculationService;
-    private final DocumentClient              documentClient;
+    private final DocumentFeignClient documentClient;
     private final DemandMapper                mapper;
 
     // Compteur thread-safe pour les numéros de demande
@@ -45,7 +46,7 @@ public class DemandService {
             HistoriqueStatutsRepository historiqueRepository,
             StateMachineService         stateMachineService,
             FinancialCalculationService calculationService,
-            DocumentClient              documentClient,
+            DocumentFeignClient         documentClient,
             DemandMapper                mapper
     ) {
         this.demandRepository     = demandRepository;
@@ -192,25 +193,45 @@ public class DemandService {
     // ── DELETE ────────────────────────────────────────────────
 
     @Transactional
-    public void deleteDemand(String demandId, String exporterId) {
+    public void deleteDemand(String demandId, String exporterId, List<String> roles) {
         DemandAchatTraite demand = findDemandOrThrow(demandId);
 
-        if (!demand.getExporterId().equals(exporterId)) {
-            throw new InvalidStateTransitionException(
-                    "Vous n'êtes pas autorisé à supprimer cette demande"
-            );
-        }
+        boolean isAdmin = roles != null && roles.contains("ADMINISTRATEUR");
 
-        if (demand.getStatus() != StatusDemande.DRAFT) {
-            throw new InvalidStateTransitionException(
-                    "Impossible de supprimer une demande soumise"
-            );
+        if (!isAdmin) {
+            if (!demand.getExporterId().equals(exporterId)) {
+                throw new InvalidStateTransitionException(
+                        "Vous n'êtes pas autorisé à supprimer cette demande"
+                );
+            }
+            if (demand.getStatus() != StatusDemande.DRAFT) {
+                throw new InvalidStateTransitionException(
+                        "Impossible de supprimer une demande soumise"
+                );
+            }
         }
 
         demandRepository.delete(demand);
-        log.info("Demande supprimée : {}", demandId);
+        log.info("Demande supprimée : {} (admin={})", demandId, isAdmin);
     }
+    @Transactional
+    public DemandResponse forceStatus(String demandId, String adminUserId, String newStatus, String reason) {
+        DemandAchatTraite demand = findDemandOrThrow(demandId);
+        StatusDemande target = parseStatus(newStatus);
 
+        StatusDemande previous = demand.getStatus();
+        demand.setStatus(target);
+
+        // On bypass la state machine — log direct dans l'historique
+        stateMachineService.logForcedTransition(
+                demand, previous, target, adminUserId,
+                "Intervention admin : " + (reason != null ? reason : "non spécifiée")
+        );
+
+        demandRepository.save(demand);
+        log.warn("Statut forcé par admin {} : {} {} → {}", adminUserId, demandId, previous, target);
+        return mapper.toResponse(demand);
+    }
     // ── TRANSITIONS DE STATUT ─────────────────────────────────
 
     @Transactional

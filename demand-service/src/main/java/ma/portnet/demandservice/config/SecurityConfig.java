@@ -6,9 +6,15 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -42,12 +48,19 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter conv = new JwtGrantedAuthoritiesConverter();
-        conv.setAuthoritiesClaimName("realm_access.roles");
-        conv.setAuthorityPrefix("ROLE_");
         JwtAuthenticationConverter jwtConv = new JwtAuthenticationConverter();
-        jwtConv.setJwtGrantedAuthoritiesConverter(conv);
         jwtConv.setPrincipalClaimName("preferred_username");
+        jwtConv.setJwtGrantedAuthoritiesConverter(jwt -> {
+            Map<String, Object> realmAccess = jwt.getClaim("realm_access");
+            if (realmAccess == null || realmAccess.get("roles") == null) {
+                return List.of();
+            }
+            @SuppressWarnings("unchecked")
+            Collection<String> roles = (Collection<String>) realmAccess.get("roles");
+            return roles.stream()
+                    .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
+                    .collect(Collectors.toList());
+        });
         return jwtConv;
     }
 }

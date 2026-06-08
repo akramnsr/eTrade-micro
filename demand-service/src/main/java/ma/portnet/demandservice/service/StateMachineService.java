@@ -7,7 +7,7 @@ import ma.portnet.demandservice.entity.enums.StatusDemande;
 import ma.portnet.demandservice.exception.InvalidStateTransitionException;
 import ma.portnet.demandservice.repository.HistoriqueStatutsRepository;
 import org.springframework.stereotype.Service;
-
+import ma.portnet.demandservice.service.NotificationAsyncService;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
@@ -18,8 +18,7 @@ import java.util.UUID;
 public class StateMachineService {
 
     private final HistoriqueStatutsRepository historiqueRepository;
-    private final NotificationClient          notificationClient;
-
+    private final NotificationAsyncService    notificationClient;
     // Matrice des transitions autorisées
     private static final Map<StatusDemande, Set<StatusDemande>> TRANSITIONS = Map.of(
             StatusDemande.DRAFT,
@@ -42,12 +41,31 @@ public class StateMachineService {
 
     public StateMachineService(
             HistoriqueStatutsRepository historiqueRepository,
-            NotificationClient          notificationClient
+            NotificationAsyncService    notificationClient
     ) {
         this.historiqueRepository = historiqueRepository;
         this.notificationClient   = notificationClient;
     }
+    public void logForcedTransition(
+            DemandAchatTraite demand,
+            StatusDemande from,
+            StatusDemande to,
+            String userId,
+            String reason
+    ) {
+        HistoriqueStatuts log = HistoriqueStatuts.builder()
+                .historyId(UUID.randomUUID().toString())
+                .demande(demand)
+                .fromStatus(from)
+                .toStatus(to)
+                .changedBy(userId)
+                .changeDate(LocalDateTime.now())
+                .reason(reason)
+                .comment("Transition forcée")
+                .build();
 
+        historiqueRepository.save(log);
+    }
     public void transition(
             DemandAchatTraite demand,
             StatusDemande     newStatus,

@@ -77,16 +77,29 @@ public class DemandController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('EXPORTATEUR')")
-    @Operation(summary = "Supprimer une demande (seulement si DRAFT)")
+    @PreAuthorize("hasRole('EXPORTATEUR') or hasRole('ADMINISTRATEUR')")
+    @Operation(summary = "Supprimer une demande (DRAFT pour exportateur, tout pour admin)")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable String id,
             Authentication auth
     ) {
-        demandService.deleteDemand(id, extractUserId(auth));
+        demandService.deleteDemand(id, extractUserId(auth), extractRoles(auth));
         return ResponseEntity.ok(ApiResponse.ok("Demande supprimée", null));
     }
-
+    @PostMapping("/{id}/force-status")
+    @PreAuthorize("hasRole('ADMINISTRATEUR')")
+    @Operation(summary = "Forcer un changement de statut (admin uniquement)")
+    public ResponseEntity<ApiResponse<DemandResponse>> forceStatus(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body,
+            Authentication auth
+    ) {
+        String newStatus = body.get("status");
+        String reason    = body.get("reason");
+        return ResponseEntity.ok(ApiResponse.ok(
+                demandService.forceStatus(id, extractUserId(auth), newStatus, reason)
+        ));
+    }
     // ── TRANSITIONS DE STATUT ─────────────────────────────────
 
     @PostMapping("/{id}/submit")
