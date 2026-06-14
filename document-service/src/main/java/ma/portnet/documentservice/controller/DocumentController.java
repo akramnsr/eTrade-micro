@@ -147,4 +147,14 @@ public class DocumentController {
     ) {
         return ResponseEntity.ok(ApiResponse.ok(documentService.checkDocuments(demandId)));
     }
+    // ── Lister TOUS les documents de l'utilisateur connecté ───
+// Utilisé par la page "Mes documents" du frontend.
+
+    @GetMapping
+    @Operation(summary = "Lister tous les documents de l'utilisateur connecté",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<ApiResponse<List<DocumentResponse>>> listMine(Authentication auth) {
+        String userId = ((Jwt) auth.getPrincipal()).getSubject();
+        return ResponseEntity.ok(ApiResponse.ok(documentService.listByUser(userId)));
+    }
 }

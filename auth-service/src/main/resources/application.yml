@@ -1,59 +1,8 @@
-﻿server:
-  port: 8081
-
-spring:
+﻿spring:
   application:
-    name: auth-service        # ← AJOUTE CES 2 LIGNES
-
-  datasource:
-    url: jdbc:postgresql://etrade-pg-auth:5432/etrade_auth_db
-    username: etrade_user
-    password: etrade_pass
-
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    locations: classpath:db/migration
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${keycloak.auth-server-url}/realms/${keycloak.realm}
-
-keycloak:
-  auth-server-url: http://etrade-keycloak:8080
-  realm: etrade
-  client-id: etrade-backend
-  client-secret: W5RiSKMOiHbXX62hpUbR99djSdLZKHDi
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka-admin:eureka-pass@etrade-discovery-service:8761/eureka/
-    register-with-eureka: true
-    fetch-registry: true
-  instance:
-    prefer-ip-address: true
-    instance-id: ${spring.application.name}:${server.port}
-    lease-renewal-interval-in-seconds: 10
-    lease-expiration-duration-in-seconds: 30
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: always
-
-logging:
-  level:
-    ma.portnet: DEBUG
-    org.springframework.security: INFO
+    name: auth-service
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
+  cloud:
+    config:
+      fail-fast: false

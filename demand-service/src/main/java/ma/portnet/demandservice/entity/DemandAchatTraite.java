@@ -2,6 +2,7 @@ package ma.portnet.demandservice.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import ma.portnet.demandservice.entity.enums.ProductType;
 import ma.portnet.demandservice.entity.enums.StatusDemande;
 
 import java.math.BigDecimal;
@@ -62,6 +63,27 @@ public class DemandAchatTraite {
     @Column(name = "is_ready_for_submission")
     private Boolean isReadyForSubmission;
 
+    // Dans DemandAchatTraite.java — ajouter ces 2 champs
+    @Column(name = "transfer_reference", length = 100)
+    private String transferReference;
+
+    @Column(name = "value_date")
+    private java.time.LocalDate valueDate;
+
+    @Column(name = "exporter_email", length = 200)
+    private String exporterEmail;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "product_type", nullable = false, length = 30)
+    private ProductType productType;
+    @Column(name = "bill_context", length = 50)
+    private String billContext;
+
+    @Column(name = "lc_dc_reference", length = 50)
+    private String lcDcReference;
+
+    @Column(name = "purchase_type", length = 30)
+    private String purchaseType;
     // Relations internes au service
     @OneToMany(mappedBy = "demande", cascade = CascadeType.ALL,
             orphanRemoval = true, fetch = FetchType.LAZY)

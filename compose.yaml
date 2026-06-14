@@ -128,7 +128,27 @@ services:
       - "9001:9001"
     volumes:
       - minio_data:/data
+  # ════════════════════════════════════════════════════════════
+  # RABBITMQ
+  # ════════════════════════════════════════════════════════════
 
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: etrade-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: etrade_mq
+      RABBITMQ_DEFAULT_PASS: etrade_mq_pass
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Console de gestion (http://localhost:15672)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
   # ════════════════════════════════════════════════════════════
   # PGADMIN
   # ════════════════════════════════════════════════════════════
@@ -237,7 +257,7 @@ services:
       KEYCLOAK_AUTH_SERVER_URL: http://etrade-keycloak:8080
       KEYCLOAK_REALM: etrade
       KEYCLOAK_CLIENT_ID: etrade-backend
-      KEYCLOAK_CLIENT_SECRET: W5RiSKMOiHbXX62hpUbR99djSdLZKHDi
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       # JWT Resource Server (pour les endpoints protégés de l'auth-service)
     depends_on:
       config-server:
@@ -256,6 +276,8 @@ services:
     container_name: etrade-demand-service
     ports:
       - "8082:8082"
+    volumes:
+      - ./demand-service/target/demand-service-1.0.0-SNAPSHOT.jar:/app/app.jar
     environment:
       CONFIG_SERVER_URL: http://etrade-config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-admin:eureka-pass@etrade-discovery-service:8761/eureka/
@@ -264,6 +286,12 @@ services:
       SPRING_DATASOURCE_PASSWORD: etrade_pass
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://etrade-keycloak:8080/realms/etrade
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://etrade-keycloak:8080/realms/etrade/protocol/openid-connect/certs
+      DOCUMENT_SERVICE_URL: http://etrade-document-service:8083
+      NOTIFICATION_SERVICE_URL: http://etrade-notification-service:8084
+      SPRING_RABBITMQ_HOST: etrade-rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
+      SPRING_RABBITMQ_USERNAME: etrade_mq
+      SPRING_RABBITMQ_PASSWORD: etrade_mq_pass
     depends_on:
       config-server:
         condition: service_healthy
@@ -271,7 +299,8 @@ services:
         condition: service_healthy
       postgres-demand:
         condition: service_healthy
-
+      rabbitmq:
+        condition: service_healthy
   # ════════════════════════════════════════════════════════════
   # DOCUMENT SERVICE
   # ════════════════════════════════════════════════════════════
@@ -281,6 +310,8 @@ services:
     container_name: etrade-document-service
     ports:
       - "8083:8083"
+    volumes:
+      - ./document-service/target/document-service-1.0.0-SNAPSHOT.jar:/app/app.jar
     environment:
       CONFIG_SERVER_URL: http://etrade-config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-admin:eureka-pass@etrade-discovery-service:8761/eureka/
@@ -317,6 +348,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: etrade_pass
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://etrade-keycloak:8080/realms/etrade
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://etrade-keycloak:8080/realms/etrade/protocol/openid-connect/certs
+      SPRING_RABBITMQ_HOST: etrade-rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
+      SPRING_RABBITMQ_USERNAME: etrade_mq
+      SPRING_RABBITMQ_PASSWORD: etrade_mq_pass
     depends_on:
       config-server:
         condition: service_healthy
@@ -324,7 +359,8 @@ services:
         condition: service_healthy
       postgres-notification:
         condition: service_healthy
-
+      rabbitmq:
+        condition: service_healthy
 # ════════════════════════════════════════════════════════════
 # VOLUMES
 # ════════════════════════════════════════════════════════════
@@ -336,3 +372,4 @@ volumes:
   pg_notification_data:
   pg_keycloak_data:
   minio_data:
+  rabbitmq_data:

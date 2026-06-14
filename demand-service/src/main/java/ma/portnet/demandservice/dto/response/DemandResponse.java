@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record DemandResponse(
-
         String        demandId,
         String        requestNumber,
         StatusDemande status,
@@ -19,21 +18,21 @@ public record DemandResponse(
         BigDecimal    montantNominal,
         LocalDate     dateEcheance,
         String        description,
+
+        // ─── Nouveaux champs ─────────────────
+        String        productType,
+        String        billContext,
+        String        lcDcReference,
+        String        purchaseType,
+
         Boolean       isReadyForSubmission,
         LocalDateTime createdDate,
         LocalDateTime submittedDate,
         LocalDateTime lastModifiedDate,
 
-        // Détails des traites
         List<DetailTraiteResponse> details,
-
-        // Calculs financiers
         FinanciersResponse detailsFinanciers,
-
-        // Décision de la banque
         DecisionResponse decision,
-
-        // Historique complet
         List<HistoriqueResponse> historique
 
 ) {

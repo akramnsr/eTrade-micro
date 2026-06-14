@@ -15,7 +15,7 @@ spring:
         - id: document-service
           uri: lb://document-service
           predicates:
-            - Path=/api/v1/documents/**
+            - Path=/api/v1/documents/**, /api/v1/documents
         - id: notification-service
           uri: lb://notification-service
           predicates:

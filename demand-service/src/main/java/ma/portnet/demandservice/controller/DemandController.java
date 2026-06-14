@@ -1,3 +1,4 @@
+// demand-service/.../controller/DemandController.java
 package ma.portnet.demandservice.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,8 +42,9 @@ public class DemandController {
             @Valid @RequestBody CreateDemandRequest request,
             Authentication auth
     ) {
-        String exporterId = extractUserId(auth);
-        DemandResponse demand = demandService.createDemand(request, exporterId);
+        String exporterId    = extractUserId(auth);
+        String exporterEmail = extractEmail(auth);
+        DemandResponse demand = demandService.createDemand(request, exporterId, exporterEmail);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok("Demande créée", demand));
     }
@@ -86,6 +88,7 @@ public class DemandController {
         demandService.deleteDemand(id, extractUserId(auth), extractRoles(auth));
         return ResponseEntity.ok(ApiResponse.ok("Demande supprimée", null));
     }
+
     @PostMapping("/{id}/force-status")
     @PreAuthorize("hasRole('ADMINISTRATEUR')")
     @Operation(summary = "Forcer un changement de statut (admin uniquement)")
@@ -94,36 +97,27 @@ public class DemandController {
             @RequestBody Map<String, String> body,
             Authentication auth
     ) {
-        String newStatus = body.get("status");
-        String reason    = body.get("reason");
         return ResponseEntity.ok(ApiResponse.ok(
-                demandService.forceStatus(id, extractUserId(auth), newStatus, reason)
+                demandService.forceStatus(id, extractUserId(auth), body.get("status"), body.get("reason"))
         ));
     }
+
     // ── TRANSITIONS DE STATUT ─────────────────────────────────
 
     @PostMapping("/{id}/submit")
     @PreAuthorize("hasRole('EXPORTATEUR')")
     @Operation(summary = "Soumettre la demande — DRAFT → SUBMITTED")
     public ResponseEntity<ApiResponse<DemandResponse>> submit(
-            @PathVariable String id,
-            Authentication auth
-    ) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                demandService.submitDemand(id, extractUserId(auth))
-        ));
+            @PathVariable String id, Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok(demandService.submitDemand(id, extractUserId(auth))));
     }
 
     @PostMapping("/{id}/start-analysis")
     @PreAuthorize("hasRole('BANQUE_EXPORTATEUR')")
     @Operation(summary = "Démarrer l'analyse — SUBMITTED → IN_ANALYSIS")
     public ResponseEntity<ApiResponse<DemandResponse>> startAnalysis(
-            @PathVariable String id,
-            Authentication auth
-    ) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                demandService.startAnalysis(id, extractUserId(auth))
-        ));
+            @PathVariable String id, Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok(demandService.startAnalysis(id, extractUserId(auth))));
     }
 
     @PostMapping("/{id}/approve")
@@ -132,12 +126,9 @@ public class DemandController {
     public ResponseEntity<ApiResponse<DemandResponse>> approve(
             @PathVariable String id,
             @RequestBody(required = false) Map<String, String> body,
-            Authentication auth
-    ) {
+            Authentication auth) {
         String conditions = body != null ? body.getOrDefault("conditions", "") : "";
-        return ResponseEntity.ok(ApiResponse.ok(
-                demandService.approveDemand(id, extractUserId(auth), conditions)
-        ));
+        return ResponseEntity.ok(ApiResponse.ok(demandService.approveDemand(id, extractUserId(auth), conditions)));
     }
 
     @PostMapping("/{id}/reject")
@@ -146,11 +137,8 @@ public class DemandController {
     public ResponseEntity<ApiResponse<DemandResponse>> reject(
             @PathVariable String id,
             @RequestBody Map<String, String> body,
-            Authentication auth
-    ) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                demandService.rejectDemand(id, extractUserId(auth), body.get("reason"))
-        ));
+            Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok(demandService.rejectDemand(id, extractUserId(auth), body.get("reason"))));
     }
 
     @PostMapping("/{id}/finance")
@@ -158,59 +146,54 @@ public class DemandController {
     @Operation(summary = "Financer — APPROVED → FINANCED")
     public ResponseEntity<ApiResponse<DemandResponse>> finance(
             @PathVariable String id,
-            Authentication auth
-    ) {
+            @RequestBody(required = false) Map<String, String> body,
+            Authentication auth) {
+        String transferRef = body != null ? body.get("transferReference") : null;
+        java.time.LocalDate valueDate = null;
+        if (body != null && body.get("valueDate") != null && !body.get("valueDate").isBlank()) {
+            valueDate = java.time.LocalDate.parse(body.get("valueDate"));
+        }
         return ResponseEntity.ok(ApiResponse.ok(
-                demandService.financeDemand(id, extractUserId(auth))
-        ));
+                demandService.financeDemand(id, extractUserId(auth), transferRef, valueDate)));
     }
 
     @PostMapping("/{id}/present")
     @PreAuthorize("hasRole('BANQUE_EXPORTATEUR')")
     @Operation(summary = "Présenter à échéance — FINANCED → PRESENTATION_AT_MATURITY")
     public ResponseEntity<ApiResponse<DemandResponse>> present(
-            @PathVariable String id,
-            Authentication auth
-    ) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                demandService.presentDemand(id, extractUserId(auth))
-        ));
+            @PathVariable String id, Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok(demandService.presentDemand(id, extractUserId(auth))));
     }
 
     @PostMapping("/{id}/settle")
     @PreAuthorize("hasRole('BANQUE_IMPORTATEUR')")
     @Operation(summary = "Régler — PRESENTATION_AT_MATURITY → SETTLED")
     public ResponseEntity<ApiResponse<DemandResponse>> settle(
-            @PathVariable String id,
-            Authentication auth
-    ) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                demandService.settleDemand(id, extractUserId(auth))
-        ));
+            @PathVariable String id, Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok(demandService.settleDemand(id, extractUserId(auth))));
     }
 
-    // ── CALCUL FINANCIER (aperçu avant création) ───────────────
+    // ── CALCUL FINANCIER (aperçu) ─────────────────────────────
 
     @GetMapping("/calculate")
     @Operation(summary = "Calculer les agios et montant net (aperçu)")
     public ResponseEntity<ApiResponse<Map<String, Object>>> calculate(
             @RequestParam java.math.BigDecimal nominal,
             @RequestParam java.math.BigDecimal taux,
-            @RequestParam int jours
-    ) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                demandService.calculatePreview(nominal, taux, jours)
-        ));
+            @RequestParam int jours) {
+        return ResponseEntity.ok(ApiResponse.ok(demandService.calculatePreview(nominal, taux, jours)));
     }
 
     // ── Helpers ───────────────────────────────────────────────
 
     private String extractUserId(Authentication auth) {
-        Jwt jwt = (Jwt) auth.getPrincipal();
-        return jwt.getSubject();
+        return ((Jwt) auth.getPrincipal()).getSubject();
     }
 
-    @SuppressWarnings("unchecked")
+    private String extractEmail(Authentication auth) {
+        return (String) ((Jwt) auth.getPrincipal()).getClaims().get("email");
+    }
+
     private List<String> extractRoles(Authentication auth) {
         return auth.getAuthorities().stream()
                 .map(a -> a.getAuthority().replace("ROLE_", ""))

@@ -1,0 +1,2 @@
+ALTER TABLE demande_achat_traite
+    ADD COLUMN product_type VARCHAR(30) NOT NULL DEFAULT 'EXPORT_BILL_PURCHASE';

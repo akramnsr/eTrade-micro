@@ -3,9 +3,9 @@ spring:
     name: document-service
 
   datasource:
-    url: jdbc:postgresql://etrade-pg-document:5432/etrade_document_db
-    username: etrade_user
-    password: etrade_pass
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5435/etrade_document_db}
+    username: ${SPRING_DATASOURCE_USERNAME:etrade_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:etrade_pass}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -30,8 +30,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://etrade-keycloak:8080/realms/etrade
-          jwk-set-uri: http://etrade-keycloak:8080/realms/etrade/protocol/openid-connect/certs
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:8180/realms/etrade}
+          jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI:http://localhost:8180/realms/etrade/protocol/openid-connect/certs}
 
   servlet:
     multipart:
@@ -42,16 +42,20 @@ spring:
 server:
   port: 8083
 
+# URL des autres microservices
+services:
+  demand-service-url: ${DEMAND_SERVICE_URL:http://localhost:8082}
+
 minio:
-  url: http://etrade-minio:9000
-  access-key: minio_admin
-  secret-key: minio_pass123
-  bucket-name: etrade-documents
+  url: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minio_admin}
+  secret-key: ${MINIO_SECRET_KEY:minio_pass123}
+  bucket-name: ${MINIO_BUCKET_NAME:etrade-documents}
 
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka-admin:eureka-pass@etrade-discovery-service:8761/eureka/
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://eureka-admin:eureka-pass@localhost:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
   instance:

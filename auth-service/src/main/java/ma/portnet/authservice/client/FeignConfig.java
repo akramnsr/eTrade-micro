@@ -10,12 +10,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 @Configuration
 public class FeignConfig {
 
-    /**
-     * Propage le JWT de l'admin courant vers les appels Feign sortants.
-     * Le token entrant (admin1) est forward tel quel à demand-service.
-     */
     @Bean
-    public RequestInterceptor jwtPropagationInterceptor() {
+    public RequestInterceptor jwtForwardingInterceptor() {
         return template -> {
             var auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth instanceof JwtAuthenticationToken jwtAuth) {

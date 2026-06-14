@@ -26,8 +26,6 @@ public class SecurityConfig {
             "/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            // Endpoint events appelé par demand-service (inter-service, sans token user)
-            "/api/v1/notifications/events"
     };
 
     @Bean

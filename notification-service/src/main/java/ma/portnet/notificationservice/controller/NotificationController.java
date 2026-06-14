@@ -25,17 +25,6 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
-    // ── Reçoit un événement de demand-service (pas de token requis) ──
-
-    @PostMapping("/events")
-    @Operation(summary = "Recevoir un événement de changement de statut (inter-service)")
-    public ResponseEntity<Void> receiveEvent(
-            @RequestBody Map<String, Object> event
-    ) {
-        notificationService.processStatusChangeEvent(event);
-        return ResponseEntity.ok().build();
-    }
-
     // ── Endpoints pour le frontend ────────────────────────────
 
     @GetMapping

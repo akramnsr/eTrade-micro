@@ -89,7 +89,8 @@ public class StateMachineService {
         notificationClient.notifyStatusChange(
                 demand.getDemandId(),
                 demand.getExporterId(),
-                newStatus.name()
+                newStatus.name(),
+                demand.getExporterEmail()       // ← Option C
         );
 
         log.info("Transition : demande={} {} → {} par {}",

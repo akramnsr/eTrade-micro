@@ -41,7 +41,8 @@ spring:
 
 server:
   port: 8083
-
+services:
+  demand-service-url: http://etrade-demand-service:8082
 minio:
   url: http://localhost:9000
   access-key: minio_admin

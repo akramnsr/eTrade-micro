@@ -30,4 +30,6 @@ public interface DocumentRepository extends JpaRepository<Document, String> {
     void deleteByDemandIdAndDocumentId(String demandId, String documentId);
 
     boolean existsByDemandIdAndDocumentType(String demandId, TypeDocument type);
+
+    List<Document> findByUploadedByOrderByUploadedDateDesc(String uploadedBy);
 }

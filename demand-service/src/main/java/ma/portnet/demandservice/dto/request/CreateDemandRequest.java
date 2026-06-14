@@ -2,6 +2,7 @@ package ma.portnet.demandservice.dto.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import ma.portnet.demandservice.entity.enums.ProductType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -25,13 +26,28 @@ public record CreateDemandRequest(
         @Size(max = 1000, message = "La description ne doit pas dépasser 1000 caractères")
         String description,
 
+        // ─── Type de produit (EBP ou EBD) ─────────────────────────────
+        ProductType productType,
+
+        // ─── Contexte commercial : LC_ACCEPTANCE, LC_DEFERRED_PAYMENT,
+        //     DC_ACCEPTANCE_DA, OPEN_ACCOUNT ────────────────────────────
+        @Size(max = 50)
+        String billContext,
+
+        // ─── Référence LC ou DC associée (optionnelle en Open Account) ─
+        @Size(max = 50)
+        String lcDcReference,
+
+        // ─── Type d'achat / escompte : WITH_RECOURSE, WITHOUT_RECOURSE ─
+        @Size(max = 30)
+        String purchaseType,
+
         @NotEmpty(message = "Au moins un détail de traite est requis")
         @Valid
         List<DetailTraiteRequest> details
 
 ) {
     public record DetailTraiteRequest(
-
             @NotBlank(message = "Le numéro de traite est obligatoire")
             String draftNumber,
 
@@ -58,6 +74,5 @@ public record CreateDemandRequest(
             @NotNull(message = "La date d'échéance de la traite est obligatoire")
             @Future
             LocalDate maturityDate
-
     ) {}
 }

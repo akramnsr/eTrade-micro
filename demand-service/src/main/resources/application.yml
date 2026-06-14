@@ -1,7 +1,19 @@
 spring:
   application:
     name: demand-service
-
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:etrade_mq}
+    password: ${SPRING_RABBITMQ_PASSWORD:etrade_mq_pass}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 2000
+          max-attempts: 3
+          multiplier: 2.0
+        default-requeue-rejected: false   # après échec des retries → DLQ
   datasource:
     url: jdbc:postgresql://localhost:5432/etrade_demand_db
     username: etrade_user

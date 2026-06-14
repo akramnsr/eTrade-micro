@@ -2,10 +2,24 @@ spring:
   application:
     name: demand-service
 
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:etrade_mq}
+    password: ${SPRING_RABBITMQ_PASSWORD:etrade_mq_pass}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 2000
+          max-attempts: 3
+          multiplier: 2.0
+        default-requeue-rejected: false   # après échec des retries → DLQ
+
   datasource:
-    url: jdbc:postgresql://etrade-pg-demand:5432/etrade_demand_db
-    username: etrade_user
-    password: etrade_pass
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/etrade_demand_db}
+    username: ${SPRING_DATASOURCE_USERNAME:etrade_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:etrade_pass}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 15
@@ -30,21 +44,21 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://etrade-keycloak:8080/realms/etrade
-          jwk-set-uri: http://etrade-keycloak:8080/realms/etrade/protocol/openid-connect/certs
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:8180/realms/etrade}
+          jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI:http://localhost:8180/realms/etrade/protocol/openid-connect/certs}
 
 server:
   port: 8082
 
-# URLs inter-services (fallback si Eureka non dispo)
+# URLs des autres microservices
 services:
-  document-service-url: http://etrade-document-service:8083
-  notification-service-url: http://etrade-notification-service:8084
+  document-service-url: ${DOCUMENT_SERVICE_URL:http://localhost:8083}
+  notification-service-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
 
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka-admin:eureka-pass@etrade-discovery-service:8761/eureka/
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://eureka-admin:eureka-pass@localhost:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
   instance:

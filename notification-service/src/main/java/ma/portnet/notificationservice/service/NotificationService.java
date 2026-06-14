@@ -19,9 +19,12 @@ import java.util.UUID;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final EmailService emailService;
 
-    public NotificationService(NotificationRepository notificationRepository) {
+    public NotificationService(NotificationRepository notificationRepository,
+                               EmailService emailService) {
         this.notificationRepository = notificationRepository;
+        this.emailService = emailService;
     }
 
     // ── Reçoit un événement de demand-service ─────────────────
@@ -31,18 +34,18 @@ public class NotificationService {
         String demandId   = (String) event.get("demandId");
         String exporterId = (String) event.get("exporterId");
         String newStatus  = (String) event.get("newStatus");
+        String recipientEmail = (String) event.get("recipientEmail"); // peut être null
 
         if (demandId == null || exporterId == null || newStatus == null) {
             log.warn("Événement notification incomplet : {}", event);
             return;
         }
 
-        // Construire le message selon le statut
         NotificationType type    = resolveType(newStatus);
         String           title   = buildTitle(newStatus);
         String           message = buildMessage(demandId, newStatus);
 
-        // Créer la notification in-app
+        // Notification in-app
         Notification notification = Notification.builder()
                 .notificationId(UUID.randomUUID().toString())
                 .demandId(demandId)
@@ -53,8 +56,11 @@ public class NotificationService {
                 .readFlag(false)
                 .createdDate(LocalDateTime.now())
                 .build();
-
         notificationRepository.save(notification);
+
+        // Email (DS-08/09/10 : "Envoie un email à l'exportateur")
+        emailService.send(recipientEmail, title, message);
+
         log.info("Notification créée : demandId={} status={} pour {}",
                 demandId, newStatus, exporterId);
     }

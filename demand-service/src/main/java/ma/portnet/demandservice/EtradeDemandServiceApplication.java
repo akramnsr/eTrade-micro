@@ -7,7 +7,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @EnableFeignClients
-@EnableAsync
 public class EtradeDemandServiceApplication {
 
     public static void main(String[] args) {

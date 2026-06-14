@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class DemandMapper {
@@ -27,6 +26,13 @@ public class DemandMapper {
                 d.getMontantNominal(),
                 d.getDateEcheance(),
                 d.getDescription(),
+
+                // ─── Nouveaux champs métier ───────────────────────
+                d.getProductType() != null ? d.getProductType().name() : null,
+                d.getBillContext(),
+                d.getLcDcReference(),
+                d.getPurchaseType(),
+
                 d.getIsReadyForSubmission(),
                 d.getCreatedDate(),
                 d.getSubmittedDate(),

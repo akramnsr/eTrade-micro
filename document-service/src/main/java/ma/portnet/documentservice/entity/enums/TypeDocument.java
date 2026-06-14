@@ -1,11 +1,14 @@
 package ma.portnet.documentservice.entity.enums;
 
 public enum TypeDocument {
-    TRAITE_ACCEPTEE,       // Obligatoire
-    FACTURE_COMMERCIALE,   // Obligatoire
-    CONNAISSEMENT,         // Obligatoire (B/L)
-    CERTIFICAT_INSPECTION, // Optionnel
-    LISTE_COLISAGE,        // Optionnel
-    CERTIFICAT_ORIGINE,    // Optionnel
-    AUTRE                  // Optionnel
+    // Obligatoires (DS-06)
+    TRAITE_ACCEPTEE,
+    FACTURE_COMMERCIALE,
+    CONNAISSEMENT,
+
+    // Optionnels
+    CERTIFICAT_ORIGINE,
+    PACKING_LIST,
+    ASSURANCE,
+    TITRE_EXPORTATION
 }
