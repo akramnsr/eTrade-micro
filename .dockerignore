@@ -1,0 +1,59 @@
+# ─── Build artifacts (recompilés DANS l'image) ───
+**/target/
+**/*.jar
+**/*.war
+
+# ─── IDE ───
+**/.idea/
+**/*.iml
+**/.vscode/
+**/.project
+**/.classpath
+**/.settings/
+
+# ─── Git ───
+.git/
+.gitignore
+.gitattributes
+
+# ─── Maven wrapper (on utilise mvn de l'image) ───
+**/.mvn/
+**/mvnw
+**/mvnw.cmd
+
+# ─── Docker meta ───
+**/Dockerfile*
+**/compose*.yaml
+**/docker-compose*.yml
+.dockerignore
+
+# ─── Secrets — JAMAIS dans une image ───
+.env
+.env.*
+**/*.pem
+**/*.key
+
+# ─── Documentation ───
+**/*.md
+**/HELP.md
+**/README*
+**/LICENSE*
+docs/
+
+# ─── Logs ───
+**/*.log
+**/logs/
+
+# ─── OS ───
+**/.DS_Store
+**/Thumbs.db
+
+# ─── Frontend (pas concerné par les builds backend) ───
+frontend/
+node_modules/
+
+# ─── Config-repo (servi à part par Config Server, pas embarqué) ───
+config-repo/
+
+# ─── Keycloak import (monté en volume, pas dans l'image) ───
+keycloak-import/

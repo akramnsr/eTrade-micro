@@ -2,26 +2,36 @@
   port: 8081
 
 spring:
+  application:
+    name: auth-service
+
   datasource:
     url: jdbc:postgresql://etrade-pg-auth:5432/etrade_auth_db
-    username: etrade_user
-    password: etrade_pass
+    username: ${DB_USERNAME:etrade_user}
+    password: ${DB_PASSWORD:etrade_pass}
 
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: false
+    open-in-view: false
 
   flyway:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${keycloak.auth-server-url}/realms/${keycloak.realm}
+
 keycloak:
-  auth-server-url: http://etrade-keycloak:8080
-  realm: etrade
-  client-id: etrade-backend
-  client-secret: W5RiSKMOiHbXX62hpUbR99djSdLZKHDi
+  auth-server-url: ${KEYCLOAK_URL:http://etrade-keycloak:8080}
+  realm: ${KEYCLOAK_REALM:etrade}
+  client-id: ${KEYCLOAK_CLIENT_ID:etrade-backend}
+  client-secret: ${KEYCLOAK_CLIENT_SECRET}
 
 eureka:
   client:
@@ -42,7 +52,7 @@ management:
         include: health,info
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
 logging:
   level:
