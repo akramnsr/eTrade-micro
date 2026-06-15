@@ -57,3 +57,6 @@ config-repo/
 
 # ─── Keycloak import (monté en volume, pas dans l'image) ───
 keycloak-import/
+
+!auth-service/target/
+!auth-service/target/*.jar
