@@ -14,13 +14,12 @@ COPY auth-service/pom.xml ./auth-service/pom.xml
 # 2. Download des dépendances (offline mode)
 #    -pl auth-service → ne builde que ce module
 #    -am              → inclut le parent POM nécessaire
-RUN mvn -B -f pom.xml -pl auth-service -am dependency:go-offline -DskipTests
-
+RUN mvn -B -f auth-service/pom.xml dependency:go-offline -DskipTests
 # 3. Code source du module concerné uniquement
 COPY auth-service/src ./auth-service/src
 
 # 4. Build du JAR
-RUN mvn -B -f pom.xml -pl auth-service -am clean package -DskipTests
+RUN mvn -B -f auth-service/pom.xml clean package -DskipTests
 
 # ═══════════════════════════════════════════════════════════════
 # STAGE 2 — RUNTIME (JRE seul, image légère)
