@@ -9,7 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-@FeignClient(name = "demand-service", configuration = FeignConfig.class)
+@FeignClient(
+        name = "demand-service",
+        url = "${services.demand-service-url:http://etrade-demand-service:8082}",
+        configuration = FeignConfig.class
+)
 public interface DemandServiceClient {
 
     @GetMapping("/api/v1/demands")
