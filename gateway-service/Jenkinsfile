@@ -34,18 +34,18 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                // 'SonarQube' = nom du serveur configuré dans Jenkins (À CONFIRMER)
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        ./mvnw -B -pl gateway-service sonar:sonar \
-                          -Dsonar.projectKey=etrade-gateway-service \
-                          -Dsonar.projectName=gateway-service
-                    '''
-                }
-            }
-        }
+      stage('SonarQube Analysis') {
+          steps {
+              withSonarQubeEnv('SonarQube') {
+                  sh '''
+                      ./mvnw -B -pl gateway-service -am \
+                        org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar \
+                        -Dsonar.projectKey=etrade-gateway-service \
+                        -Dsonar.projectName='eTrade Gateway Service'
+                  '''
+              }
+          }
+      }
 
         // Pas de stage "Quality Gate" : webhook SonarQube non configuré pour le moment.
 
