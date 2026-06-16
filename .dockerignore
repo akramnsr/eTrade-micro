@@ -1,62 +1,46 @@
-# ─── Build artifacts (recompilés DANS l'image) ───
-**/target/
-**/*.jar
-**/*.war
-
-# ─── IDE ───
-**/.idea/
-**/*.iml
-**/.vscode/
-**/.project
-**/.classpath
-**/.settings/
-
-# ─── Git ───
-.git/
-.gitignore
-.gitattributes
-
-# ─── Maven wrapper (on utilise mvn de l'image) ───
-**/.mvn/
-**/mvnw
-**/mvnw.cmd
-
-# ─── Docker meta ───
-**/Dockerfile*
-**/compose*.yaml
-**/docker-compose*.yml
-.dockerignore
-
-# ─── Secrets — JAMAIS dans une image ───
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 .env
 .env.*
-**/*.pem
-**/*.key
+!.env.example
+**/target/
+**/.idea/
 
-# ─── Documentation ───
-**/*.md
-**/HELP.md
-**/README*
-**/LICENSE*
-docs/
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 
-# ─── Logs ───
-**/*.log
-**/logs/
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
 
-# ─── OS ───
-**/.DS_Store
-**/Thumbs.db
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# ─── Frontend (pas concerné par les builds backend) ───
-frontend/
-node_modules/
+### VS Code ###
+.vscode/
 
-# ─── Config-repo (servi à part par Config Server, pas embarqué) ───
-config-repo/
-
-# ─── Keycloak import (monté en volume, pas dans l'image) ───
-keycloak-import/
-
-!auth-service/target/
-!auth-service/target/*.jar
+# =========================================================
+# Runtime-only : autoriser UNIQUEMENT les JAR à entrer dans
+# le contexte Docker (ces lignes doivent rester APRÈS **/target/)
+# =========================================================
+!gateway-service/target
+gateway-service/target/*
+!gateway-service/target/*.jar
