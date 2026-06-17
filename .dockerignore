@@ -1,54 +1,41 @@
-HELP.md
-.mvn/wrapper/maven-wrapper.jar
+# ===========================================================
+#  .dockerignore — racine du monorepo etrade-backend
+#  Dockerfile (runtime-only) -> COPY <service>/target/<service>-*.jar /app/app.jar
+#  REGLE D'OR : ne JAMAIS exclure le DOSSIER target (**/target/),
+#  sinon Docker n'y descend pas et !**/target/*.jar est ignore.
+#  On exclut le CONTENU (**/target/*), puis on re-inclut les JAR.
+# ===========================================================
 
-.env
-.env.*
-!.env.example
-
+# Git
 .git
 .gitignore
 
-### IDE
-
-.idea
+# IDE
 **/.idea
-*.iws
-*.iml
-*.ipr
-.vscode/
-.apt_generated
-.classpath
-.factorypath
-.project
+**/*.iml
+**/*.iws
+**/*.ipr
+.vscode
 .settings
-.springBeans
-.sts4-cache
-nbproject/private/
-nbbuild/
-dist/
-nbdist/
-.nb-gradle/
+.project
+.classpath
 
-### Frontend / node
+# Secrets / env
+**/.env
+**/.env.*
 
+# Frontend (inutile pour les images backend)
 frontend
-**/node_modules
 
-### Sources inutiles dans l'image Docker runtime
-
+# Sources Java (les images ne copient que le JAR final)
 **/src
-**/build
 
-### Target : garder seulement les JAR finaux
+# Maven wrapper / divers
+**/.mvn
+**/mvnw
+**/mvnw.cmd
+HELP.md
 
+# --- Contenu des target/ exclu, mais on GARDE le JAR final ---
 **/target/*
-!auth-service/target/
-!auth-service/target/*.jar
-!gateway-service/target/
-!gateway-service/target/*.jar
-!demand-service/target/
-!demand-service/target/*.jar
-!document-service/target/
-!document-service/target/*.jar
-!notification-service/target/
-!notification-service/target/*.jar
+!**/target/*.jar
