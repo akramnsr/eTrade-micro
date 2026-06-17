@@ -1,15 +1,21 @@
 HELP.md
-target/
 .mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+
 .env
 .env.*
 !.env.example
-**/target/
-**/.idea/
 
-### STS ###
+.git
+.gitignore
+
+### IDE
+
+.idea
+**/.idea
+*.iws
+*.iml
+*.ipr
+.vscode/
 .apt_generated
 .classpath
 .factorypath
@@ -17,30 +23,32 @@ target/
 .settings
 .springBeans
 .sts4-cache
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
+### Frontend / node
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
+frontend
+**/node_modules
 
-### VS Code ###
-.vscode/
+### Sources inutiles dans l'image Docker runtime
 
-# =========================================================
-# Runtime-only : autoriser UNIQUEMENT les JAR à entrer dans
-# le contexte Docker (ces lignes doivent rester APRÈS **/target/)
-# =========================================================
-!gateway-service/target
-gateway-service/target/*
+**/src
+**/build
+
+### Target : garder seulement les JAR finaux
+
+**/target/*
+!auth-service/target/
+!auth-service/target/*.jar
+!gateway-service/target/
 !gateway-service/target/*.jar
+!demand-service/target/
+!demand-service/target/*.jar
+!document-service/target/
+!document-service/target/*.jar
+!notification-service/target/
+!notification-service/target/*.jar
