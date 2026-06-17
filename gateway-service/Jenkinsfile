@@ -33,11 +33,11 @@ stages {
         }
     }
 
-  stage('Maven Build') {
-      steps {
-          sh 'mvn -B -pl gateway-service -am clean package -DskipTests'
-      }
-  }
+    stage('Maven Build') {
+        steps {
+            sh 'mvn -B -pl gateway-service -am clean package -DskipTests'
+        }
+    }
 
     stage('SonarQube Analysis') {
         steps {
@@ -49,6 +49,13 @@ stages {
                       -Dsonar.projectName='eTrade Gateway Service'
                 '''
             }
+        }
+    }
+
+    stage('Verify JAR') {
+        steps {
+            sh 'ls -lah gateway-service/target'
+            sh 'ls gateway-service/target/gateway-service-*.jar'
         }
     }
 

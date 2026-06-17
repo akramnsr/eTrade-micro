@@ -1,7 +1,6 @@
 pipeline {
 agent any
 
-```
 environment {
     HARBOR_REGISTRY = '192.168.100.10:8080'
     HARBOR_PROJECT  = 'etrade'
@@ -115,6 +114,5 @@ post {
         cleanWs()
     }
 }
-```
 
 }
