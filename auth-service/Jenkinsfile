@@ -1,111 +1,113 @@
 pipeline {
-    agent any
+agent any
 
-    environment {
-        HARBOR_REGISTRY = '192.168.100.10:8080'
-        HARBOR_PROJECT  = 'etrade'
-        SERVICE_NAME    = 'auth-service'
-        IMAGE_NAME      = "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${SERVICE_NAME}"
-        SONAR_PROJECT_KEY = 'etrade-auth-service'
+```
+environment {
+    HARBOR_REGISTRY = '192.168.100.10:8080'
+    HARBOR_PROJECT  = 'etrade'
+    SERVICE_NAME    = 'auth-service'
+    IMAGE_NAME      = "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${SERVICE_NAME}"
+    SONAR_PROJECT_KEY = 'etrade-auth-service'
+}
+
+options {
+    timestamps()
+    buildDiscarder(logRotator(numToKeepStr: '10'))
+    timeout(time: 30, unit: 'MINUTES')
+    disableConcurrentBuilds()
+}
+
+stages {
+    stage('Checkout') {
+        steps {
+            checkout scm
+            sh 'git log -1 --oneline'
+            script {
+                env.GIT_SHORT = sh(
+                    script: "git rev-parse --short=7 HEAD",
+                    returnStdout: true
+                ).trim()
+
+                env.IMAGE_TAG = "1.0.0-${env.GIT_SHORT}"
+                env.IMAGE_FULL = "${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+                env.IMAGE_LATEST = "${env.IMAGE_NAME}:latest"
+            }
+            echo "Building image: ${env.IMAGE_FULL}"
+        }
     }
 
-    options {
-        timestamps()
-        buildDiscarder(logRotator(numToKeepStr: '10'))
-        timeout(time: 30, unit: 'MINUTES')
-        disableConcurrentBuilds()
+    stage('Maven Build') {
+        steps {
+            sh 'mvn -B -pl auth-service -am clean package -DskipTests'
+        }
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-                sh 'git log -1 --oneline'
-                script {
-                    env.GIT_SHORT = sh(
-                        script: "git rev-parse --short=7 HEAD",
-                        returnStdout: true
-                    ).trim()
-
-                    env.IMAGE_TAG  = "1.0.0-${env.GIT_SHORT}"
-                    env.IMAGE_FULL = "${env.IMAGE_NAME}:${env.IMAGE_TAG}"
-                    env.IMAGE_LATEST = "${env.IMAGE_NAME}:latest"
-                }
-                echo "Building image: ${env.IMAGE_FULL}"
-            }
-        }
-
-        stage('Maven Build') {
-            steps {
-                sh 'chmod +x ./mvnw'
-                sh './mvnw -B -pl auth-service -am clean package -DskipTests'
-            }
-        }
-
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh """
-                        ./mvnw -B -pl auth-service -am sonar:sonar \
-                          -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                          -Dsonar.projectName='eTrade Auth Service'
-                    """
-                }
-            }
-        }
-
-        stage('Docker Build') {
-            steps {
+    stage('SonarQube Analysis') {
+        steps {
+            withSonarQubeEnv('SonarQube') {
                 sh """
-                    docker build \
-                      -f auth-service/Dockerfile \
-                      -t ${IMAGE_FULL} \
-                      -t ${IMAGE_LATEST} \
-                      .
-                """
-                sh "docker images ${IMAGE_NAME}"
-            }
-        }
-
-        stage('Docker Push to Harbor') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'harbor-credentials',
-                    usernameVariable: 'HARBOR_USER',
-                    passwordVariable: 'HARBOR_PASS'
-                )]) {
-                    sh """
-                        echo \$HARBOR_PASS | docker login ${HARBOR_REGISTRY} \
-                          -u \$HARBOR_USER --password-stdin
-
-                        docker push ${IMAGE_FULL}
-                        docker push ${IMAGE_LATEST}
-
-                        docker logout ${HARBOR_REGISTRY}
-                    """
-                }
-            }
-        }
-
-        stage('Cleanup') {
-            steps {
-                sh """
-                    docker rmi ${IMAGE_FULL} ${IMAGE_LATEST} || true
-                    docker image prune -f
+                    mvn -B -pl auth-service -am sonar:sonar \
+                      -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                      -Dsonar.projectName='eTrade Auth Service'
                 """
             }
         }
     }
 
-    post {
-        success {
-            echo "✅ auth-service image pushed to Harbor: ${env.IMAGE_FULL}"
-        }
-        failure {
-            echo "❌ Pipeline failed for auth-service"
-        }
-        always {
-            cleanWs()
+    stage('Docker Build') {
+        steps {
+            sh """
+                docker build \
+                  -f auth-service/Dockerfile \
+                  -t ${IMAGE_FULL} \
+                  -t ${IMAGE_LATEST} \
+                  .
+            """
+            sh "docker images ${IMAGE_NAME}"
         }
     }
+
+    stage('Docker Push to Harbor') {
+        steps {
+            withCredentials([usernamePassword(
+                credentialsId: 'harbor-credentials',
+                usernameVariable: 'HARBOR_USER',
+                passwordVariable: 'HARBOR_PASS'
+            )]) {
+                sh """
+                    echo \$HARBOR_PASS | docker login ${HARBOR_REGISTRY} \
+                      -u \$HARBOR_USER --password-stdin
+
+                    docker push ${IMAGE_FULL}
+                    docker push ${IMAGE_LATEST}
+
+                    docker logout ${HARBOR_REGISTRY}
+                """
+            }
+        }
+    }
+
+    stage('Cleanup') {
+        steps {
+            sh """
+                docker rmi ${IMAGE_FULL} ${IMAGE_LATEST} || true
+                docker image prune -f
+            """
+        }
+    }
+}
+
+post {
+    success {
+        echo "✅ auth-service image pushed to Harbor: ${env.IMAGE_FULL}"
+    }
+    failure {
+        echo "❌ Pipeline failed for auth-service"
+    }
+    always {
+        cleanWs()
+    }
+}
+```
+
 }
