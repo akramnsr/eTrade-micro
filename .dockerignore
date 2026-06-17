@@ -52,3 +52,6 @@ frontend
 !document-service/target/*.jar
 !notification-service/target/
 !notification-service/target/*.jar
+
+!discovery-service/target
+!discovery-service/target/*.jar
